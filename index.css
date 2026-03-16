@@ -1,0 +1,67 @@
+#abc_control_ui a {
+text-decoration: none;
+color: #000;
+flex: 1;
+}
+
+#start.active {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+#save.active {
+    color: #F44336;
+    font-weight: bold;
+}
+
+
+
+#abc_ui {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+    height: 80vh;
+}
+
+#abc_music_code {
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+#abc_codes {
+    flex: 4; 
+    padding: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    resize: none;
+}
+
+#abc_control_ui {
+    flex: 1; 
+    padding: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    resize: none;
+}
+
+#staff_notation {
+    flex: 1; 
+    padding: 5px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+    resize: none;
+    overflow-x: auto;
+}
+#staff_area {
+    overflow-x: auto;
+}
