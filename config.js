@@ -32,26 +32,36 @@ saveBtn.addEventListener('click', function() {
     if (isSaving) return;
     saveBtn.classList.add('active');
     isSaving = true;
-    abcString = abcCode.value.split("  ").join("");
-    if (abcString.length > 0){
-        const d = new Date();
-        time = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}_${d.getHours()}-${d.getMinutes()}-${d.getSeconds()}`
-        // 创建 Blob 对象（文件内容）
-        const blob = new Blob([abcString], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        // 创建隐藏的下载链接
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'abc_' + time + '.txt';      // 默认文件名（用户可修改）
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-    saveBtn.classList.remove('active');
-    isSaving = false;
-});
 
+    let abcString = abcCode.value.split("  ").join("");
+    if (abcString.length > 0) {
+        fetch('/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain'   // 告诉服务器发送的是纯文本
+            },
+            body: abcString
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('文件已保存');
+            } else {
+                alert('保存失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('保存出错');
+        })
+        .finally(() => {
+            saveBtn.classList.remove('active');
+            isSaving = false;
+        });
+    } else {
+        saveBtn.classList.remove('active');
+        isSaving = false;
+    }
+});
 
 
 abcCode.addEventListener('input', function() {
