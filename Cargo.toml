@@ -1,0 +1,52 @@
+[package]
+name = "abclyrics"
+
+
+[package.version]
+workspace = true
+
+
+[package.edition]
+workspace = true
+
+
+[package.authors]
+workspace = true
+
+
+[package.license]
+workspace = true
+
+
+[lib]
+crate-type = [ "staticlib", "cdylib", "rlib" ]
+
+
+[[bin]]
+name = "abclyricsbin"
+path = "src/main.rs"
+
+
+[dependencies.tauri]
+version = "2.11.5"
+features = [ "default", "devtools", "tray-icon", "protocol-asset" ]
+
+
+[dependencies.serde]
+workspace = true
+
+
+[dependencies.serde_json]
+workspace = true
+
+
+[dependencies.anyhow]
+workspace = true
+
+
+[dependencies.tokio]
+workspace = true
+
+
+[build-dependencies]
+tauri-build = { version = "2.2.0", features = [] }

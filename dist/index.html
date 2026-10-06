@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABC Editor — 音乐表征转换工作室</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        header {
+            background: #16213e;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid #0f3460;
+        }
+        header h1 { font-size: 1.3rem; color: #e94560; }
+        header .badge {
+            font-size: 0.7rem;
+            background: #0f3460;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #a0a0c0;
+        }
+        main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 12px;
+            padding: 12px;
+            height: calc(100vh - 52px);
+        }
+        .panel {
+            background: #16213e;
+            border-radius: 8px;
+            border: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #e94560;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header .fmt-tag {
+            font-size: 0.65rem;
+            background: #e94560;
+            color: #fff;
+            padding: 1px 6px;
+            border-radius: 3px;
+        }
+        .panel-body { flex: 1; overflow: auto; padding: 8px; }
+
+        #abc-input {
+            width: 100%; height: 100%;
+            background: #0f0f23;
+            color: #c0e0c0;
+            border: none;
+            resize: none;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        #abc-input:focus { outline: 1px solid #e94560; }
+
+        #sheet-render {
+            width: 100%; min-height: 200px;
+            background: #fafaf8;
+            border-radius: 4px;
+            overflow: auto;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #sheet-render svg { max-width: 100%; }
+
+        #mel-canvas {
+            width: 100%; height: 200px;
+            border-radius: 4px;
+            background: #0f0f23;
+        }
+
+        .toolbar {
+            display: flex; gap: 6px; flex-wrap: wrap;
+        }
+        button {
+            background: #0f3460;
+            color: #e0e0e0;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        button:hover { background: #e94560; }
+        button.active { background: #e94560; }
+
+        #log-panel { grid-column: 1 / -1; max-height: 120px; }
+        #log-output {
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            font-size: 0.7rem;
+            color: #80c080;
+            white-space: pre-wrap;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        select {
+            background: #0f3460;
+            color: #e0e0e0;
+            border: 1px solid #0f3460;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>🎵 ABC Editor</h1>
+    <span class="badge">MP3 ↔ ABC ↔ MIDI ↔ 音符PNG ↔ 梅尔谱图</span>
+    <span style="margin-left:auto;font-size:0.7rem;color:#666;" id="graph-status">图: 0边已注册</span>
+</header>
+
+<main>
+    <!-- 左上: ABC 编辑器 -->
+    <section class="panel">
+        <div class="panel-header">
+            <span>🎼 ABC 记谱文本</span>
+            <span class="fmt-tag">ABC</span>
+        </div>
+        <div class="panel-body">
+            <textarea id="abc-input" placeholder="在此输入 ABC 曲谱...&#10;&#10;X:1&#10;T:示例&#10;M:4/4&#10;L:1/4&#10;K:C&#10;CDEF GABc|">X:1
+T:Für Elise
+M:3/4
+L:1/8
+K:Am
+e^d e^d | e B d c | A z z |</textarea>
+        </div>
+    </section>
+
+    <!-- 右上: 五线谱渲染 + 梅尔谱图 -->
+    <section class="panel">
+        <div class="panel-header">
+            <span>🎨 可视化预览</span>
+            <div style="display:flex;gap:6px;">
+                <button id="btn-render-sheet" class="active">五线谱</button>
+                <button id="btn-render-mel">梅尔谱图</button>
+            </div>
+        </div>
+        <div class="panel-body" style="display:flex;flex-direction:column;gap:8px;">
+            <div id="sheet-render"></div>
+            <canvas id="mel-canvas" style="display:none;"></canvas>
+            <audio id="audio-player" controls style="width:100%;display:none;"></audio>
+            <div id="png-preview" style="display:none;"></div>
+        </div>
+    </section>
+
+    <!-- 底部: 转换工具栏 -->
+    <section class="panel" style="grid-column:1/2;">
+        <div class="panel-header">
+            <span>🔧 转换管线</span>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <span style="font-size:0.65rem;color:#888;">源:</span>
+                <select id="conv-from">
+                    <option value="abc" selected>ABC</option>
+                    <option value="midi">MIDI</option>
+                    <option value="mp3">MP3</option>
+                    <option value="sheetpng">音符PNG</option>
+                    <option value="melspectrogram">梅尔谱图</option>
+                </select>
+                <span style="color:#e94560;">→</span>
+                <select id="conv-to">
+                    <option value="midi">MIDI</option>
+                    <option value="mp3">MP3</option>
+                    <option value="abc" selected>ABC</option>
+                    <option value="sheetpng">音符PNG</option>
+                    <option value="melspectrogram">梅尔谱图</option>
+                </select>
+                <button id="btn-convert">转换</button>
+            </div>
+        </div>
+        <div class="panel-body toolbar" style="flex-direction:row;flex-wrap:wrap;">
+            <button id="btn-abc-midi">ABC → MIDI</button>
+            <button id="btn-abc-png">ABC → 音符PNG</button>
+            <button id="btn-midi-abc">MIDI → ABC</button>
+            <button id="btn-load-mp3">📂 加载 MP3</button>
+            <button id="btn-mel-from-mp3">MP3 → 梅尔谱图</button>
+            <button id="btn-validate">校验 ABC</button>
+            <button id="btn-tokens">提取 Token</button>
+            <button id="btn-clear">清空日志</button>
+        </div>
+    </section>
+
+    <!-- 底部: 日志 -->
+    <section class="panel" id="log-panel">
+        <div class="panel-header">
+            <span>📋 日志</span>
+            <span class="fmt-tag" id="log-count">0</span>
+        </div>
+        <div class="panel-body" id="log-output"></div>
+    </section>
+</main>
+
+<input type="file" id="file-input" accept="audio/*,.mid,.midi,.abc,.txt,.png,.jpg" style="display:none;">
+
+<!-- 第三方文件资产 -->
+<script src="../lib/abcjs-basic-min.js"></script>
+<script src="../lib/midi.min.js"></script>
+
+<!-- 自研工具脚本 -->
+<script src="../js/music-convert.js"></script>
+<script src="../js/abc-utils.js"></script>
+<script src="../js/midi-utils.js"></script>
+<script src="../js/mel-spectrogram.js"></script>
+<script src="../js/audio-utils.js"></script>
+<script src="../js/modfier.js"></script>
+<script src="../js/test.js"></script>
+
+<script>
+(function() {
+
+const $ = (s) => document.querySelector(s);
+const logEl = $('#log-output');
+let logLines = 0;
+
+function log(msg) {
+    const time = new Date().toLocaleTimeString();
+    logEl.textContent += `[${time}] ${msg}\n`;
+    logLines++;
+    $('#log-count').textContent = logLines;
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+function updateGraphStatus() {
+    const graph = MusicConvert.graph();
+    let totalEdges = 0;
+    for (const edges of Object.values(graph)) totalEdges += edges.length;
+    $('#graph-status').textContent = `图: ${totalEdges}边 | 节点: ${ConversionNodeNames.length}`;
+}
+
+// ==================== 注册转换边 ====================
+const g = MusicConvert;
+
+g.register('abc', 'midi', async (abcStr) => {
+    if (typeof ABCJS === 'undefined') throw new Error('abcjs 未加载');
+    const midiBuffer = ABCJS.synth.getMidiFile(abcStr, {});
+    return new Uint8Array(midiBuffer);
+}, { cost: 1, label: 'abc2midi' });
+
+g.register('abc', 'sheetpng', async (abcStr) => {
+    const svg = ABCJS.renderAbc('sheet-render', abcStr, { responsive: 'resize' });
+    const svgEl = $('#sheet-render').querySelector('svg');
+    if (!svgEl) throw new Error('渲染失败');
+    const svgData = new XMLSerializer().serializeToString(svgEl);
+    const canvas = document.createElement('canvas');
+    const svgBox = svgEl.getBoundingClientRect();
+    canvas.width = svgBox.width * 2;
+    canvas.height = svgBox.height * 2;
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    return new Promise((resolve, reject) => {
+        img.onload = () => {
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            canvas.toBlob((blob) => resolve(blob), 'image/png');
+        };
+        img.onerror = reject;
+        img.src = url;
+    });
+}, { cost: 1, label: 'abcjs→PNG' });
+
+g.register('midi', 'abc', async (midiBytes) => {
+    log('MIDI→ABC 需后端 midi2abc 支持，浏览器端仅做结构校验');
+    const header = MIDIUtils.parseHeader(midiBytes);
+    return `X:1\nT:MIDI Import\nM:4/4\nK:C\n% format=${header.format} tracks=${header.numTracks} division=${header.division}`;
+}, { cost: 3, label: 'midi2abc(存根)' });
+
+g.register('midi', 'mp3', async (midiBytes) => {
+    log('MIDI→MP3 需 FluidSynth 渲染（后端 CLI 或 WASM）');
+    return new Uint8Array(0);
+}, { cost: 2, label: 'FluidSynth(存根)' });
+
+g.register('mp3', 'melspectrogram', async (audioBuffer) => {
+    const result = MelSpectrogram.fromAudioBuffer(audioBuffer, { nFFT: 2048, hopLength: 512, nMelBins: 128 });
+    const melCanvas = $('#mel-canvas');
+    melCanvas.style.display = 'block';
+    melCanvas.width = result.timeFrames;
+    melCanvas.height = 256;
+    MelSpectrogram.drawToCanvas(melCanvas.getContext('2d'), result.data, melCanvas.width, melCanvas.height);
+    return result;
+}, { cost: 1, label: 'STFT+Mel' });
+
+g.register('melspectrogram', 'mp3', async (melData) => {
+    log('梅尔谱图→MP3 需 HiFi-GAN 声码器反演（后端 Python/ONNX）');
+    return new Uint8Array(0);
+}, { cost: 4, label: 'HiFi-GAN(存根)' });
+
+g.register('sheetpng', 'abc', async (pngBlob) => {
+    log('音符PNG→ABC 需 OMR 光学识别（后端 Audiveris）');
+    return 'X:1\nK:C\n% OMR result placeholder';
+}, { cost: 5, label: 'OMR(存根)' });
+
+updateGraphStatus();
+
+// ==================== UI 事件 ====================
+
+let currentAudioBuffer = null;
+
+$('#abc-input').addEventListener('input', function() {
+    renderSheet(this.value);
+});
+
+function renderSheet(abc) {
+    try {
+        if (typeof ABCJS !== 'undefined') {
+            ABCJS.renderAbc('sheet-render', abc, { responsive: 'resize' });
+        }
+    } catch (e) {
+        $('#sheet-render').innerHTML = `<span style="color:#c33;padding:12px;">渲染错误: ${e.message}</span>`;
+    }
+}
+
+$('#btn-render-sheet').addEventListener('click', function() {
+    this.classList.add('active');
+    $('#btn-render-mel').classList.remove('active');
+    $('#sheet-render').style.display = 'flex';
+    $('#mel-canvas').style.display = 'none';
+    $('#png-preview').style.display = 'none';
+    renderSheet($('#abc-input').value);
+});
+
+$('#btn-render-mel').addEventListener('click', function() {
+    this.classList.add('active');
+    $('#btn-render-sheet').classList.remove('active');
+    $('#sheet-render').style.display = 'none';
+    $('#mel-canvas').style.display = 'block';
+    $('#png-preview').style.display = 'none';
+});
+
+$('#btn-convert').addEventListener('click', async function() {
+    const from = $('#conv-from').value;
+    const to = $('#conv-to').value;
+    log(`执行转换: ${from} → ${to}`);
+
+    try {
+        let input;
+        if (from === 'abc') input = $('#abc-input').value;
+        else if (from === 'mp3' && currentAudioBuffer) input = currentAudioBuffer;
+        else { log(`暂无 ${from} 输入数据`); return; }
+
+        const result = await g.convert(input, from, to);
+        log(`转换成功: ${from} → ${to} (${typeof result})`);
+
+        if (to === 'midi' && result instanceof Uint8Array) {
+            log(`MIDI 输出: ${result.length} 字节`);
+            const blob = new Blob([result], { type: 'audio/midi' });
+            downloadBlob(blob, 'output.mid');
+        }
+        if (to === 'sheetpng' && result instanceof Blob) {
+            const url = URL.createObjectURL(result);
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.maxWidth = '100%';
+            $('#png-preview').innerHTML = '';
+            $('#png-preview').appendChild(img);
+            $('#png-preview').style.display = 'block';
+            $('#sheet-render').style.display = 'none';
+            $('#mel-canvas').style.display = 'none';
+        }
+    } catch (e) {
+        log(`❌ 转换失败: ${e.message}`);
+    }
+});
+
+$('#btn-abc-midi').addEventListener('click', async function() {
+    try {
+        const midi = await g.convert($('#abc-input').value, 'abc', 'midi');
+        log(`ABC→MIDI: ${midi.length} 字节`);
+        downloadBlob(new Blob([midi], { type: 'audio/midi' }), 'output.mid');
+    } catch (e) { log(`❌ ${e.message}`); }
+});
+
+$('#btn-abc-png').addEventListener('click', async function() {
+    try {
+        const png = await g.convert($('#abc-input').value, 'abc', 'sheetpng');
+        const url = URL.createObjectURL(png);
+        log(`ABC→音符PNG: ${(png.size/1024).toFixed(1)} KB`);
+        downloadBlob(png, 'sheet.png');
+    } catch (e) { log(`❌ ${e.message}`); }
+});
+
+$('#btn-midi-abc').addEventListener('click', async function() {
+    log('MIDI→ABC: 需加载 MIDI 文件，点击 📂 加载 MP3 选择 .mid 文件');
+    $('#file-input').click();
+});
+
+$('#btn-load-mp3').addEventListener('click', () => $('#file-input').click());
+
+$('#file-input').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    log(`加载文件: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+
+    const ext = file.name.split('.').pop().toLowerCase();
+    const buf = await file.arrayBuffer();
+
+    if (ext === 'mid' || ext === 'midi') {
+        const midiBytes = new Uint8Array(buf);
+        const header = MIDIUtils.parseHeader(midiBytes);
+        log(`MIDI: format=${header.format} tracks=${header.numTracks} ticksPerBeat=${header.ticksPerBeat}`);
+
+        const track0 = MIDIUtils.parseTrack(midiBytes, header.headerSize, header.ticksPerBeat);
+        const notes = MIDIUtils.extractNotes(track0.events);
+        log(`MIDI notes: ${notes.length} 个音符`);
+
+        try {
+            const abc = await g.convert(midiBytes, 'midi', 'abc');
+            $('#abc-input').value = abc;
+            renderSheet(abc);
+            log('MIDI→ABC stub 完成');
+        } catch (e) { log(`⚠️ ${e.message}`); }
+    }
+
+    if (ext === 'mp3' || ext === 'wav' || ext === 'ogg') {
+        try {
+            currentAudioBuffer = await AudioUtils.decodeArrayBuffer(buf);
+            log(`音频: ${currentAudioBuffer.duration.toFixed(1)}s ${currentAudioBuffer.sampleRate}Hz ${currentAudioBuffer.numberOfChannels}ch`);
+
+            const audioUrl = URL.createObjectURL(file);
+            $('#audio-player').src = audioUrl;
+            $('#audio-player').style.display = 'block';
+
+            const melResult = await g.convert(currentAudioBuffer, 'mp3', 'melspectrogram');
+            log(`梅尔谱图: ${melResult.timeFrames}帧 × ${melResult.melBins}bins`);
+        } catch (e) { log(`❌ ${e.message}`); }
+    }
+
+    if (ext === 'abc' || ext === 'txt') {
+        const text = new TextDecoder().decode(buf);
+        $('#abc-input').value = text;
+        renderSheet(text);
+        log(`ABC 加载: ${text.length} 字符, 校验: ${ABCUtils.isValid(text) ? '✅' : '⚠️ 缺少X:/K:字段'}`);
+    }
+});
+
+$('#btn-mel-from-mp3').addEventListener('click', async function() {
+    if (!currentAudioBuffer) { log('请先加载 MP3 文件'); return; }
+    try {
+        const mel = await g.convert(currentAudioBuffer, 'mp3', 'melspectrogram');
+        log(`梅尔谱图: ${mel.timeFrames}帧 × ${mel.melBins}bins`);
+        $('#btn-render-mel').click();
+    } catch (e) { log(`❌ ${e.message}`); }
+});
+
+$('#btn-validate').addEventListener('click', function() {
+    const abc = $('#abc-input').value;
+    const valid = ABCUtils.isValid(abc);
+    const headers = ABCUtils.parseHeaders(abc);
+    const meter = ABCUtils.parseMeter(headers.M);
+    const key = ABCUtils.parseKey(headers.K);
+    log(`校验: ${valid ? '✅ 通过' : '⚠️ 缺少 X:/K: 字段'}`);
+    log(`  标题: ${headers.T || '(无)'}  拍号: ${meter.num}/${meter.den}  调性: ${key.tonic} ${key.mode}`);
+});
+
+$('#btn-tokens').addEventListener('click', function() {
+    const tokens = ABCUtils.extractTokens($('#abc-input').value);
+    log(`Token 提取: ${tokens.length} 个音符 [${tokens.slice(0, 20).join(' ')}${tokens.length > 20 ? ' ...' : ''}]`);
+
+    const midiTokens = tokens.map(t => ABCUtils.tokenToMidi(t)).filter(n => n !== null);
+    log(`MIDI 映射: ${midiTokens.length} 个有效音高 [${midiTokens.slice(0, 20).join(' ')}${midiTokens.length > 20 ? ' ...' : ''}]`);
+});
+
+$('#btn-clear').addEventListener('click', function() {
+    logEl.textContent = '';
+    logLines = 0;
+    $('#log-count').textContent = '0';
+});
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    log(`已下载: ${filename}`);
+}
+
+// 启动渲染
+renderSheet($('#abc-input').value);
+log('ABC Editor 就绪');
+log(`转换图: ${ConversionNodeNames.join(' → ')}  (${Object.values(MusicConvert.graph()).reduce((s,e)=>s+e.length,0)} 条边)`);
+
+})();
+</script>
+</body>
+</html>

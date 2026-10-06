@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.abc.lyrics",
+  "productName": "abclyrics",
+  "mainBinaryName": "abclyricsbin",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "frontendDist": "dist"
+  },
+  
+  "bundle": {
+    "resources": {}
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Lyrics Editor",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "allow": [
+            "assets/soundfonts/**/*"
+          ]
+        }
+      },
+      "capabilities": [
+        "default"
+      ],
+      "freezePrototype": false,
+      "pattern": {
+        "use": "brownfield"
+      },
+      "dangerousDisableAssetCspModification": false,
+      "csp": {
+        "default-src": "'self' asset: http://asset.localhost",
+        "connect-src": "http://*.localhost https://*",
+        "img-src": "'self' blob: data: asset: http://asset.localhost",
+        "media-src": "'self' blob: data: asset: http://asset.localhost",
+        "style-src": "'unsafe-inline' 'self'",
+        "script-src": "'wasm-unsafe-eval' 'self'"
+      }
+    }
+  }
+}

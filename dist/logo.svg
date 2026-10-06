@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" stroke="black"
+  stroke-width="2" fill="red" />
+  <text x="100" y="100" font-size="36" fill="yellow" text-anchor="middle">ABC Lyrics</text>
+</svg>
