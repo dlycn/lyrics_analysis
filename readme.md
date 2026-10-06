@@ -6,34 +6,6 @@
 
 ## 🧠 核心设计理念
 
-```mermaid
-graph TD
-    A["🎵 MP3<br/>音频"]
-    B["🎼 ABC<br/>记谱文本"]
-    C["🎹 MIDI<br/>音符序列"]
-    D["🖼️ 音符PNG<br/>乐谱图像"]
-    E["📊 梅尔谱图<br/>频谱矩阵"]
-
-    A -->|"AMT转录<br/>(MT3)"| C
-    A -->|"STFT+Mel<br/>(librosa)"| E
-    C -->|"FluidSynth"| A
-    C -->|"midi2abc"| B
-    C -->|"MuseScore"| D
-    B -->|"abc2midi"| C
-    B -->|"abcjs渲染"| D
-    D -->|"OMR<br/>(Audiveris)"| B
-    E -->|"HiFi-GAN"| A
-
-    classDef audio fill:#e74c3c,color:#fff
-    classDef symbolic fill:#2ecc71,color:#fff
-    classDef visual fill:#3498db,color:#fff
-    classDef spectral fill:#9b59b6,color:#fff
-    class A audio
-    class B,C symbolic
-    class D visual
-    class E spectral
-```
-
 > **ABC 是 AI 原生格式**：纯文本、结构化、Token 友好，LLM/Transformer 可直接消费。  
 > **MIDI 是桥接层**：连接符号音乐（ABC）和音频世界（MP3/梅尔谱图）。  
 > **梅尔谱图是音频指纹**：用于相似度检索、AIGC 反演。
