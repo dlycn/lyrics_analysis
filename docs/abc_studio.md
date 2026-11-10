@@ -1,8 +1,24 @@
-## Note
+## ABC 字段速查（本工具的指令 ↔ 字段映射）
 
-* **<font size=5>X</font>**:$\begin{aligned}&\textit{\small music.id}\\[-2ex]&\text{\scriptsize 作品编号:int}\end{aligned}$
-* **<font size=5>T</font>**:$\begin{aligned}&\text{\small music.title}\\[-2ex]&\text{\scriptsize 标题:str}\end{aligned}$
-* **<font size=5>C</font>**:$\begin{aligned}&\text{\small music.composer}\\[-2ex]&\text{\scriptsize 作曲家:str}\end{aligned}$
-* **<font size=5>M</font>**:$\begin{aligned}&\text{\small music.key}\\[-2ex]&\text{\scriptsize 拍号:frac}\end{aligned}$
-* **<font size=5>L</font>**:$\begin{aligned}&\text{\small music.time.signature}\\[-2ex]&\text{\scriptsize 基准时值:frac}\end{aligned}$
-* **<font size=5>K</font>**:$\begin{aligned}&\text{\small music.mode}\\[-2ex]&\text{\scriptsize 谱号:clef=bass,treble,alto.etc}\end{aligned}$
+| 字段 | 含义 | 取值示例 | 备注 |
+|:--:|------|------|------|
+| **X** | 作品编号（tune id） | `1` | 必填，多数解析器要求 |
+| **T** | 标题 | `Für Elise` | 可多条 |
+| **C** | 作曲家 | `Beethoven` | |
+| **M** | 拍号（time signature） | `4/4`、`3/8`、`C`、`C|` | 决定小节长度 |
+| **L** | 基准时值（unit note length） | `1/8`、`1/16` | 决定音名后数字的含义 |
+| **Q** | 速度 | `1/4=120` | 播放速度 |
+| **K** | 调号 / 调性（key） | `C`、`Am`、`Bb`、`F#` | 必填；同时决定默认升降 |
+| **V** | 声部（voice） | `1 name="Piano" clef=treble` | 多声部时使用 |
+| **w:** | 歌词行 | `w: Hel-lo world` | 紧跟对应音乐行 |
+
+### 指令与字段的对应（本工具）
+
+- 音符指令 → 音名 + 八度标记（`^`/`_`/`=` 变音，`'`/`,` 八度）+ 时值后缀
+- 休止指令 → `z`（可见）/ `x`（隐形）
+- 和弦指令 → `[CEG]`
+- 小节线指令 → `|`、`||`、`|]`、`|:`、`:|`、`:|:`
+- 连音线 → 音符后的 `-`
+- 头部字段指令 → `X:`/`T:`/`M:`/`L:`/`Q:`/`K:`/`V:` 行
+- `%%MIDI program` 指令 → 声部音色（abcjs 取原始 MIDI program 号，0 起）
+- 片段指令 → 直接插入的 ABC 文本（如三连音 `(3`，可设"紧贴"）

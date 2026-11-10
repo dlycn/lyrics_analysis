@@ -6,7 +6,10 @@
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
-    "frontendDist": "dist"
+    "frontendDist": "dist",
+    "windows": {
+      "staticVCRuntime": true
+    }
   },
   
   "bundle": {
@@ -16,10 +19,13 @@
     "windows": [
       {
         "label": "main",
-        "title": "Lyrics Editor",
-        "width": 800,
-        "height": 600
+        "title": "abclyrics studio",
+        "width": 1280,
+        "height": 960,
+        "minWidth": 960,
+        "minHeight": 720
       }
+    
     ],
     "security": {
       "assetProtocol": {
@@ -37,10 +43,10 @@
       "pattern": {
         "use": "brownfield"
       },
-      "dangerousDisableAssetCspModification": false,
+      "dangerousDisableAssetCspModification": ["style-src"],
       "csp": {
         "default-src": "'self' asset: http://asset.localhost",
-        "connect-src": "http://*.localhost https://*",
+        "connect-src": "'self' http://*.localhost https://* sf: http://sf.localhost",
         "img-src": "'self' blob: data: asset: http://asset.localhost",
         "media-src": "'self' blob: data: asset: http://asset.localhost",
         "style-src": "'unsafe-inline' 'self'",
