@@ -45,6 +45,8 @@ fn soundfont_root(app: Option<&tauri::AppHandle>) -> Option<PathBuf> {
     candidates.into_iter().find(|c| c.join("FluidR3_GM").exists())
 }
 
+
+
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![

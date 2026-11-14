@@ -245,16 +245,26 @@ impl MidiTask {
         self.notemeta.tempo.entry(track).or_insert_with(Vec::new).push((tick,tempo));
     }
 
-    /// 推进 delta 个 tick：更新 tick 与对应的秒数时间。
-    /// 节拍制下每 tick = tempo/(valtick*1e6)；时间码制下每 tick = 1/valtick。
-    pub fn advance(&mut self, delta: u32) {
-        let rate = if self.mode {
+    /// 当前 timing 下，每推进 1 个 tick 对应的秒数。
+    /// 节拍制: tempo/(valtick·10⁶)；时间码制: 1/valtick。
+    fn rate(&mut self) -> f32 {
+        if self.mode {
             self.get_tempo() as f32 / (self.valtick * TEMPO_UNIT as f32)
         } else {
             1.0 / self.valtick
-        };
-        self.time += rate * delta as f32;
-        self.tick += delta;
+        }
+    }
+
+    /// 推进 delta 个 tick。
+    /// - tick_over 记录"已消费完毕"的旧游标；
+    /// - tick 提升为新的"正在处理"游标；
+    /// - 返回值是本次推进的累计秒数(速度恒定的单步值)。
+    pub fn advance(&mut self, delta: u32) -> f32 {
+        let step = self.rate() * delta as f32;
+        self.tick_over = self.tick; // 旧段标记为已处理完毕
+        self.tick += delta;         // 更新处理游标
+        self.time += step;          // 累计秒数
+        step
     }
 
     /// 记录一条 (track, tick) 处的文本 meta。
@@ -284,14 +294,9 @@ impl MidiTask {
         self.tick
     }
 
-    pub fn update_time(&mut self) -> f32 {
-        let m = self.mode as u32;
-        let n = !self.mode as u32;
-        let numerator = (n+m * self.get_tempo()) as f32; // tempo 或 1
-        let unifyval = self.valtick*(n+TEMPO_UNIT*m) as f32;
-        let delta_time = numerator / unifyval;
-        self.time += delta_time;
-        delta_time
+    /// 已消费完毕的 tick 段终点（只读）
+    pub fn tick_over(&self) -> u32 {
+        self.tick_over
     }
 
 }
