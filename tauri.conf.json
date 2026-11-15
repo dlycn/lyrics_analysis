@@ -14,11 +14,14 @@
   
   "bundle": {
     "resources": {
-      "lyrics/**/*": "assets/lyrics",
-      "soundfonts/**/*": "assets/soundfonts"
+      "assets/lyrics/": "lyrics",
+      "assets/soundfonts/": "soundfonts",
+      "assets/test/": "test"
     }
   },
+
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "label": "main",
@@ -35,7 +38,7 @@
         "enable": true,
         "scope": {
           "allow": [
-            "$RESOURCE/assets/soundfonts/**/*"
+            "$RESOURCE/**/*"
           ]
         }
       },
@@ -50,7 +53,7 @@
       "csp": {
         "default-src": "'self' asset: http://asset.localhost",
         "connect-src": "'self' http://*.localhost",
-        "img-src": "'self' blob: data: asset: http://asset.localhost",
+        "img-src": "'self' blob: data: asset: http://asset.localhost https://cdn.jsdelivr.net https://*.com",
         "media-src": "'self' blob: data: asset: http://asset.localhost",
         "style-src": "'unsafe-inline' 'self'",
         "script-src": "'wasm-unsafe-eval' 'self'"

@@ -32,7 +32,16 @@ midly = "0.5.3"
 
 [dependencies.tauri]
 version = "2.11.5"
-features = [ "default", "devtools", "tray-icon", "protocol-asset" ]
+features = ["default", "devtools", "tray-icon", "protocol-asset" ]
+
+[dependencies.tauri-plugin-opener]
+version = "2"
+
+[dependencies.tauri-plugin-fs]
+version = "2"
+
+[dependencies.tauri-plugin-dialog]
+version = "2"
 
 
 [dependencies.serde]

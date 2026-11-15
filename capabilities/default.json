@@ -5,6 +5,9 @@
     "main"
   ],
   "permissions": [
-    "core:default"
+    "core:default",
+    "opener:default",
+    "dialog:default",
+    "fs:default"
   ]
 }
