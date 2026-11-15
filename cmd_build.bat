@@ -1,6 +1,10 @@
 @echo off
+echo change encoding to utf-8
 chcp 65001 >nul
-cargo tauri build>build\build.log 2>&1
+echo build args start
+cargo tauri build>build.log 2>&1
 set mode=build
-copy "..\..\target\release\abclyricsbin.exe" "build\abclyrics.exe"
-choice /t 5 /d y /n >nul
+echo build args end
+copy "..\..\target\release\abclyricsbin.exe" "abclyrics.exe"
+echo copy and running
+abclyrics.exe

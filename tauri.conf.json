@@ -13,7 +13,10 @@
   },
   
   "bundle": {
-    "resources": {}
+    "resources": {
+      "lyrics/**/*": "assets/lyrics",
+      "soundfonts/**/*": "assets/soundfonts"
+    }
   },
   "app": {
     "windows": [
@@ -32,7 +35,7 @@
         "enable": true,
         "scope": {
           "allow": [
-            "assets/soundfonts/**/*"
+            "$RESOURCE/assets/soundfonts/**/*"
           ]
         }
       },
@@ -46,7 +49,7 @@
       "dangerousDisableAssetCspModification": ["style-src"],
       "csp": {
         "default-src": "'self' asset: http://asset.localhost",
-        "connect-src": "'self' http://*.localhost https://* sf: http://sf.localhost",
+        "connect-src": "'self' http://*.localhost",
         "img-src": "'self' blob: data: asset: http://asset.localhost",
         "media-src": "'self' blob: data: asset: http://asset.localhost",
         "style-src": "'unsafe-inline' 'self'",
