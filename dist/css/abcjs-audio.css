@@ -1,0 +1,136 @@
+/* =========================================================
+   abcjs-audio.css —— em 自适应版
+   要点: 所有尺寸用 em,锚定在 .abcjs-inline-audio 的 font-size 上。
+   想整条控制条等比缩放 = 只改下面这一个 font-size。
+   (功能必需项仍保留:flex/定位/状态切换/图标上色)
+   ========================================================= */
+
+/* ---- ①-a 容器布局 + 唯一缩放旋钮 ----
+   这行的 font-size 就是全局缩放基准:
+   想放大整条控制条 → 调大它;想缩小 → 调小它。 */
+.abcjs-inline-audio {
+	display: flex;
+	align-items: center;
+	box-sizing: border-box;
+
+	font-size: 16px;                 /* 【唯一缩放旋钮】 */
+	height: 1.6em;                   /* =26px */
+	padding: 0 0.3em;                /* =0 5px */
+	background-color: #424242;       /* 主题:黑底 */
+}
+.abcjs-inline-audio.abcjs-disabled {
+	opacity: 0.5;
+}
+
+/* ---- ①-b 按钮盒模型(图标渲染必需;尺寸用 em 跟随基准) ---- */
+.abcjs-inline-audio .abcjs-btn {
+	display: block;
+	width: 1.75em;                   /* =28px */
+	height: 2.1em;                   /* =34px */
+	margin-right: 0.125em;           /* =2px */
+	padding: 0.44em 0.25em;          /* =7px 4px */
+	box-sizing: border-box;
+	line-height: 1;
+
+	background: none !important;
+	border: 0.06em solid transparent; /* =1px */
+}
+
+/* ---- ①-c 图标着色(渲染必需) ---- */
+.abcjs-btn g {
+	fill: #f4f4f4;
+	stroke: #f4f4f4;
+}
+
+/* ---- ①-d 按压/状态切换(功能必需) ---- */
+.abcjs-inline-audio .abcjs-midi-selection.abcjs-pushed,
+.abcjs-inline-audio .abcjs-midi-loop.abcjs-pushed,
+.abcjs-inline-audio .abcjs-midi-reset.abcjs-pushed {
+	border: 0.06em solid #cccccc;      /* =1px */
+	background-color: #666666;
+	box-sizing: border-box;
+}
+
+/* 播放/暂停/加载三态图标切换(功能必需,勿删) */
+.abcjs-inline-audio .abcjs-midi-start .abcjs-pause-svg { display: none; }
+.abcjs-inline-audio .abcjs-midi-start .abcjs-loading-svg { display: none; }
+.abcjs-inline-audio .abcjs-midi-start.abcjs-pushed .abcjs-play-svg { display: none; }
+.abcjs-inline-audio .abcjs-midi-start.abcjs-loading .abcjs-play-svg { display: none; }
+.abcjs-inline-audio .abcjs-midi-start.abcjs-pushed .abcjs-pause-svg { display: block; }
+.abcjs-inline-audio .abcjs-loading .abcjs-loading-svg { display: inherit; }
+
+/* ---- ①-e 进度条定位(绝对定位值也用 em,保证随基准缩放) ---- */
+.abcjs-inline-audio .abcjs-midi-progress-background {
+	position: relative;
+	flex: 1;
+	padding: 0;
+	box-sizing: border-box;
+
+	height: 0.6em;                   /* =10px */
+	margin: 0 0.5em 0 0.9em;         /* =0 8px 0 15px */
+	border: 0.125em solid #cccccc;    /* =2px */
+	border-radius: 0.3em;            /* =5px */
+	background-color: #424242;
+}
+.abcjs-inline-audio .abcjs-midi-progress-indicator {
+	position: absolute;
+	left: 0;
+	display: inline-block;
+	box-sizing: border-box;
+
+	width: 1.25em;                   /* =20px */
+	height: 0.85em;                  /* =14px */
+	margin-left: -0.625em;           /* = -10px(半宽) */
+	border-radius: 0.375em;          /* =6px */
+	top: -0.25em;                    /* = -4px */
+	background-color: #f4f4f4;
+}
+
+/* ---- ①-f 时钟 / 速度 / 加载动画(尺寸均为 em) ---- */
+.abcjs-inline-audio .abcjs-midi-clock {
+	display: inline-block;
+	box-sizing: border-box;
+	font-family: sans-serif;
+	margin-left: 0.25em;
+	margin-right: 0.125em;
+
+	font-size: 1em;                  /* =16px(跟随基准) */
+	color: #f4f4f4;
+}
+.abcjs-inline-audio .abcjs-tempo-wrapper {
+	display: flex;
+	align-items: center;
+	box-sizing: border-box;
+
+	font-size: 0.625em;              /* =10px */
+	color: #f4f4f4;
+}
+.abcjs-inline-audio .abcjs-midi-tempo {
+	box-sizing: border-box;
+	margin: 0 0.125em 0 0.25em;
+	padding: 0 0.3em;                /* 左右留白,避免三位数贴边 */
+	text-align: right;               /* 数值靠右,100 三个字符不贴边 */
+
+	width: 3.4em;                    /* =54px,容纳 "300" 三位 + 微调箭头 */
+	border: none;
+}
+.abcjs-inline-audio .abcjs-loading {
+	outline: none;
+	animation: abcjs-spin 1s linear infinite;
+}
+.abcjs-inline-audio .abcjs-loading-svg circle {
+	stroke: #f4f4f4;
+}
+@keyframes abcjs-spin {
+	from { transform: rotate(0); }
+	to   { transform: rotate(360deg); }
+}
+
+/* ---- ② 空接口 / 可补装饰 ----
+   想要 hover 变灰:  .abcjs-btn:hover g { fill:#ccc; stroke:#ccc; }
+   触屏大号档:把 ①-a 的 font-size 调大(如 24px)即为触屏档,无需单独一套 */
+
+/* ---- 样式加载检测(保留,避免误报) ---- */
+.abcjs-css-warning {
+	display: none;
+}

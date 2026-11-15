@@ -1,0 +1,5 @@
+**/*.ps1
+**/*.exe
+assets
+icons
+test
