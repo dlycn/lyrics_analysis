@@ -93,11 +93,19 @@ Loading image 'https://…' violates CSP: "img-src 'self' blob: data: asset: htt
 **结论**
 - `img-src` 只放行列出的源，要加载 CDN 图就得把对应域名加进白名单：`img-src … https://<cdn域名>`。
 - 域宽取舍：`https://*.com` 很宽（覆盖所有 `.com` 的子域），测试方便但发布需斟酌；可收窄成明确一两个域名。
+- **最终采取**：`img-src … https://*.jsdelivr.net https://*.npmmirror.com`。
+  - 用**注册域名** `*.jsdelivr.net` 比泛化顶层域名 `*.net` 更可控（`*.net` 太宽）。
+  - `*.npmmirror.com` 精确盖住国内可达的阿里镜像。
+  - 更严的做法是只写精确 `cdn.jsdelivr.net`（子域下并无更深层级，`*.cdn.jsdelivr.net` 并不比它有用）。
+
+> **CSP 通配符语法（host-source）**：`*` 只能出现在**最左段**，或整体顶层 `*`。合法如 `https://*.net`（任意 .net 主机）、`https://*.jsdelivr.net`；**非法**如 `https://cdn.*.net`（中间段星号会被拒绝）。
 
 **踩坑过的源（网络可达性问题，非必措置问题）**
 - `i0.hdslb.com`（B 站）：因 `Referer` 触发**防盗链** 403；且它拒绝跨站引用，加白名单也没用。**结论：不走外部防盗链图，或走自己后端代理。**
 - `cdn.jsdelivr.net`：国内网络常 `ERR_CONNECTION_RESET`（被重置），且被 WebView2 判为 tracker 刷 `Tracking Prevention` 告警。
 - 改用 `registry.npmmirror.com`（阿里 npm 镜像，国内可达）后正常加载 ✅。
+
+> **jsDelivr 子域速览**：`cdn.`（主资源入口）、`fastly./quantil./gcore.`（各网络供应商节点）、`data.`（统计 API）、`testing./beta.`（测试）、`www.`（官网）。同一注册域名用子域做**职责隔离**是常规做法。
 
 **侧记——Referer/防盗链**
 - 浏览器默认 `Referrer-Policy`（跨站子资源）= `strict-origin-when-cross-origin`（只发来源源）。

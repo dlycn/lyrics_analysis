@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            html, body {
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                overflow: hidden;
+            }
+            #ov-panel {
+                position: fixed;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font: 13px/1.4 "Segoe UI", "Microsoft YaHei", sans-serif;
+                color: #fff;
+                background: rgba(30, 30, 46, 0.55);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                border-radius: 10px;
+                pointer-events: none;
+                user-select: none;
+            }
+            #ov-status {
+                color: #6fe08a;
+                font-weight: 600;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="ov-panel">
+            <span>AI 助手</span>
+            <span id="ov-status">离线</span>
+        </div>
+        <script type="module">
+            const ovStatus = document.getElementById('ov-status');
+            window.__TAURI__.event.listen('chat_status', (e) => {
+                ovStatus.textContent = e.payload;
+            });
+        </script>
+    </body>
+</html>

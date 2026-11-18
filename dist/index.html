@@ -6,9 +6,10 @@
         <title>abclyrics studio</title>
         <meta charset="utf-8">
         <link rel="stylesheet" href="css/abcjs-audio.css">
+        <link rel="stylesheet" href="css/chat-system.css">
     </head>
     <body>
-        <div id="abc-area">
+        <div class="abc-area">
             <div id="abc-editor">
                 <textarea id="abc-input" placeholder="输入 ABC 指令"></textarea>
             </div>
@@ -17,6 +18,25 @@
                 <div id="abc-audio"></div>
                 <div id="abc-warnings" hidden></div>
             </div>
+        </div>
+        <div class="chat-area">
+            <div class="chat-hd">
+                <span class="chat-hd-ava">AI</span>
+                <strong>AI 助手 <small id="chat-hd-status">离线</small></strong>
+            </div>
+
+            <!-- 消息流: 调度输出的唯一容器(滚动) -->
+            <div id="chat-stream" class="chat-stream"></div>
+
+            <!-- 输入与发送: 调度入口 -->
+            <div class="chat-cm">
+                <textarea id="chat-cm-input" class="chat-cm-input" rows="2"
+                            placeholder="Enter 发送，Shift+Enter 换行"></textarea>
+                <button id="chat-cm-send" class="chat-cm-send">发送</button>
+            </div>
+        </div>
+        <div class="loger-area">
+            <textarea id="loger-out" class="loger-out" readonly></textarea>
         </div>
         <div id="test">
             <a href="https://www.baidu.com/">测试链接</a>
@@ -27,6 +47,8 @@
 
     <script type="text/javascript" src="lib/abcjs-basic-min.js"></script>
     <script type="text/javascript" src="lib/midi.min.js"></script>    
+    <!-- self-written code lives in js/ -->
     <script type="module" src="js/gl.modify.js"></script>
     <script type="module" src="js/abc.runtime.js"></script>
+    <script type="module" src="js/chat.runtime.js"></script>
 </html>

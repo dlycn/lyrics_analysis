@@ -43,6 +43,9 @@ version = "2"
 [dependencies.tauri-plugin-dialog]
 version = "2"
 
+[dependencies.tauri-plugin-log]
+version = "2"
+
 
 [dependencies.serde]
 workspace = true
@@ -54,6 +57,10 @@ workspace = true
 
 
 [dependencies.anyhow]
+workspace = true
+
+
+[dependencies.reqwest]
 workspace = true
 
 
