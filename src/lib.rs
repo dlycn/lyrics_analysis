@@ -1,5 +1,4 @@
 use tauri::{Manager};
-use tauri_plugin_log::log;
 use tauri_plugin_opener::OpenerExt;
 mod client;
 mod midi_ana;
@@ -42,26 +41,21 @@ fn append_log(app: tauri::AppHandle, level: String, msg: String) -> Result<(), S
 
 pub fn run() {
     let builder = tauri::Builder::default()
-        // 单实例钳制:第二个实例不会真正启动,参数转交首个实例处理。
-        // 顺带解决了"二次启动看不见 overlay 特效"的幻觉——它压根没跑。
-        .plugin(
-            tauri_plugin_single_instance::init(|app, args, cwd| {
-                log::info!("二次启动被钳制,接手参数 {:?} cwd={}", args, cwd);
-                // 主窗口可被用户关闭,二次启动时把它重新聚起来
-                if let Some(win) = app.get_webview_window("main") {
-                    let _ = win.show();
-                    let _ = win.set_focus();
-                } else {
-                    let _ = tauri::WebviewWindowBuilder::new(
-                        app, "main",
-                        tauri::WebviewUrl::App("view/index.html".into()))
-                        .title("abclyrics studio")
-                        .inner_size(1280.0, 960.0)
-                        .min_inner_size(960.0, 720.0)
-                        .build();
-                }
-            })
-        )
+        // 单实例钳制:第二份启动时,把 argv 转交给已运行实例后自杀退出。
+        // 我们场景里主窗口可能被删了只剩 overlay,所以回调里智能唤醒——
+        // 有主窗口就唤起主窗口,否则把 overlay(透明悬浮屏)调到最前见个面。
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            let _ = cwd;
+            tauri_plugin_log::log::info!("收到第二实例启动,argv={:?}", argv);
+            if let Some(main) = app.get_webview_window("main") {
+                let _ = main.show();
+                let _ = main.set_focus();
+            } else if let Some(overlay) = app.get_webview_window("overlay") {
+                let _ = overlay.set_always_on_top(true);
+                let _ = overlay.show();
+                let _ = overlay.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
