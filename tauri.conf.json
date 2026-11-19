@@ -25,6 +25,7 @@
     "windows": [
       {
         "label": "main",
+        "url": "view/index.html",
         "title": "abclyrics studio",
         "width": 1280,
         "height": 960,
@@ -33,7 +34,7 @@
       },
       {
         "label": "overlay",
-        "url": "overlay.html",
+        "url": "view/overlay.html",
         "title": "",
         "width": 320,
         "height": 64,

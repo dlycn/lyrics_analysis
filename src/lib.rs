@@ -1,5 +1,5 @@
-use tauri::path::BaseDirectory;
-use tauri::{Manager, State, WebviewWindow};
+use tauri::{Manager};
+use tauri_plugin_log::log;
 use tauri_plugin_opener::OpenerExt;
 mod client;
 mod midi_ana;
@@ -23,16 +23,58 @@ fn set_overlay_passthrough(app: tauri::AppHandle, passthrough: bool) -> Result<b
     Ok(passthrough)
 }
 
+/// overlay 无边框窗打不开 DevTools,把前端 console 转成文件日志。
+/// 落盘在 app_log_dir(依标识符):Windows 为
+///   %APPDATA%\com.abc.lyrics\logs\overlay.log
+#[tauri::command]
+fn append_log(app: tauri::AppHandle, level: String, msg: String) -> Result<(), String> {
+    use std::io::Write;
+    let dir = app.path().app_log_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let mut f = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join("overlay.log"))
+        .map_err(|e| e.to_string())?;
+    writeln!(f, "[{}] {}", level.to_uppercase(), msg).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 pub fn run() {
     let builder = tauri::Builder::default()
+        // 单实例钳制:第二个实例不会真正启动,参数转交首个实例处理。
+        // 顺带解决了"二次启动看不见 overlay 特效"的幻觉——它压根没跑。
+        .plugin(
+            tauri_plugin_single_instance::init(|app, args, cwd| {
+                log::info!("二次启动被钳制,接手参数 {:?} cwd={}", args, cwd);
+                // 主窗口可被用户关闭,二次启动时把它重新聚起来
+                if let Some(win) = app.get_webview_window("main") {
+                    let _ = win.show();
+                    let _ = win.set_focus();
+                } else {
+                    let _ = tauri::WebviewWindowBuilder::new(
+                        app, "main",
+                        tauri::WebviewUrl::App("view/index.html".into()))
+                        .title("abclyrics studio")
+                        .inner_size(1280.0, 960.0)
+                        .min_inner_size(960.0, 720.0)
+                        .build();
+                }
+            })
+        )
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal) // 默认是 UTC,日志要读本地时间
+                .build()
+        )
         .invoke_handler(tauri::generate_handler![
             open_url,
             set_overlay_passthrough,
-            probe_core
+            append_log,
+            client::set_state
         ]);
 
     builder.setup(|app: &mut tauri::App| {
@@ -47,10 +89,4 @@ pub fn run() {
         Ok(())
     }
     ).run(tauri::generate_context!()).expect("运行失败");
-}
-
-// 探针:参数位省略生命周期标注,State<ChatCore> 不带 '_ — 能否通过宏展开与编译?
-#[tauri::command]
-fn probe_core(core: State<client::ChatCore>) {
-    core.set_state(client::ChatState::Online);
 }

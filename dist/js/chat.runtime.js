@@ -12,17 +12,19 @@ const STREAM_CHAT = document.getElementById('chat-stream');
 const STATUS_CHAT = document.getElementById('chat-hd-status');
 const BUTTON_CHAT = document.getElementById('chat-cm-input');
 
+import { GL_COMMAND, GL_EVENT } from './gl.modify.js';
+
 /* =========================================================
    后端 → 前端 事件订阅：ChatCore.set_state 时后端 emit 的
    "chat_status" 事件，前端在此被动响应并更新头部状态文本。
    事件通道改用结构化 payload 而非 eval 注入，前后端天然解耦。
    ========================================================= */
-window.__TAURI__.event.listen('chat_status', (e) => {
+GL_EVENT.listen('chat_status', (e) => {
     STATUS_CHAT.textContent = e.payload;
 });
 
 function init() {
-   window.__TAURI__.command.invoke('probe_core');
+   GL_COMMAND.invoke('client.set_state', { state: 'Online' });
 }
 
 init();
