@@ -1,4 +1,4 @@
-use abclyrics;
+use abcmusic;
 fn main() {
-    abclyrics::run();
+    abcmusic::run();
 }

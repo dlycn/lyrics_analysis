@@ -12,13 +12,15 @@ fn hash21(p: vec2<f32>) -> f32 {
   return fract((p3.x + p3.y) * p3.z);
 }
 
+// 状态 -> 主色相：Trae 电光蓝系。离线灰蓝待机,在线亮蓝当家,
+// 忙碌转青,故障转红。整体都比之前版本更饱和、更亮。
 fn accent() -> vec3<f32> {
   let s = P.params.y;
-  var c = mix(vec3<f32>(0.42, 0.49, 0.60),            // offline
-              vec3<f32>(0.49, 0.23, 0.93),            // online  #7c3aed
+  var c = mix(vec3<f32>(0.44, 0.60, 0.88),            // offline  #70b3ff
+              vec3<f32>(0.15, 0.55, 1.00),            // online   #3b8cff
               step(0.5, s));
-  c = mix(c, vec3<f32>(0.13, 0.83, 0.93), step(1.5, s));   // busy   #22d3ee
-  c = mix(c, vec3<f32>(0.97, 0.44, 0.44), step(2.5, s));   // error  #f87171
+  c = mix(c, vec3<f32>(0.00, 0.72, 0.98), step(1.5, s));   // busy   #00b8fa
+  c = mix(c, vec3<f32>(1.00, 0.47, 0.47), step(2.5, s));   // error  #ff7878
   return c;
 }
 
@@ -47,8 +49,8 @@ fn fs_main(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
   let s  = P.params.y;
   let ac = accent();
 
-  // 离线和故障时整体收着：没人看就别烧电
-  let energy = mix(0.42, 1.0, step(0.5, s));
+  // 离线也留基本亮度——之前 0.42 太收着,整个窗都暗得不像氛围窗
+  let energy = mix(0.62, 1.0, step(0.5, s));
 
   let p  = uv - vec2<f32>(0.5);
   let dv = p * vec2<f32>(ar, 1.0);
@@ -56,14 +58,14 @@ fn fs_main(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
 
   var col = vec3<f32>(0.0);
 
-  // 1) 中心光核：按宽高比校正成圆,不是椭圆
-  let core = 1.0 - smoothstep(0.0, 0.92, dc);
-  col += ac * core * core * 0.30 * (0.85 + 0.15 * sin(t * 0.5)) * energy;
+  // 1) 中心光核：按宽高比校正成圆,提亮加饱和
+  let core = 1.0 - smoothstep(0.0, 0.88, dc);
+  col += ac * core * core * 0.42 * (0.88 + 0.12 * sin(t * 0.5)) * energy;
 
-  // 2) HUD 网格：等方格,1px 抗锯齿,中心压暗
+  // 2) HUD 网格：等方格,1px 抗锯齿,中心压暗（压得没以前狠）
   let gc = vec2<f32>(ar, 1.0) * 14.0;
   let gl = gridLine(uv.x * gc.x) + gridLine(uv.y * gc.y);
-  col += ac * min(gl, 1.0) * 0.05 * (1.0 - smoothstep(0.0, 0.7, dc)) * energy;
+  col += ac * min(gl, 1.0) * 0.07 * (1.0 - smoothstep(0.0, 0.7, dc) * 0.9) * energy;
 
   // 3) 浮游微粒：一格一颗,格内随机位置,竖直上浮,两端淡出
   //    淡出是关键——不淡出的话,点走到格子尽头会瞬间跳回另一端
@@ -78,28 +80,31 @@ fn fs_main(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
     let dd = length(vec2<f32>(pf.x - fx, pf.y - fy));
     let fade = smoothstep(0.0, 0.16, fy) * (1.0 - smoothstep(0.84, 1.0, fy));
     let tw = 0.55 + 0.45 * sin(t * 1.6 + h * 40.0);
-    col += ac * (1.0 - smoothstep(0.0, 0.12, dd)) * 0.30 * fade * tw * energy;
+    col += ac * (1.0 - smoothstep(0.0, 0.12, dd)) * 0.38 * fade * tw * energy;
   }
 
-  // 4) 边缘流光：环绕距离,min(ang,1-ang) 无接缝
+  // 4) 边缘流光：加宽加亮,绕一圈扫壁的光弧
   let b    = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-  let edge = 1.0 - smoothstep(0.0, 0.026, b);
-  let ang  = fract(atan2(p.y, p.x) * 0.15915494 + 0.75 - t * 0.10);
-  let sweep = 1.0 - smoothstep(0.0, 0.20, min(ang, 1.0 - ang));
-  col += ac * edge * sweep * 0.55 * energy;
+  let edge = 1.0 - smoothstep(0.0, 0.045, b);                // 流光带加宽近一倍
+  let ang  = fract(atan2(p.y, p.x) * 0.15915494 + 0.75 - t * 0.12);
+  let sweep = 1.0 - smoothstep(0.0, 0.28, min(ang, 1.0 - ang));
+  // 主光弧 + 一段淡淡的底光,让流光整圈有存在感
+  col += ac * edge * sweep * 0.90 * energy;
+  col += ac * edge * 0.10 * energy;
 
-  // 5) 底部水光
-  let dfloor = length((uv - vec2<f32>(0.5, 1.28)) * vec2<f32>(ar, 1.0));
-  col += vec3<f32>(0.22, 0.51, 0.97) * (1.0 - smoothstep(0.0, 0.95, dfloor)) * 0.10 * energy;
+  // 5) 底部水光：更亮更蓝,呼应蓝光主题
+  let dfloor = length((uv - vec2<f32>(0.5, 1.24)) * vec2<f32>(ar, 1.0));
+  col += vec3<f32>(0.16, 0.44, 1.00) * (1.0 - smoothstep(0.0, 0.80, dfloor)) * 0.16 * energy;
 
   // 6) 点击涟漪：中心向外扩散一圈
   let pv = P.params.z;
-  col += ac * (1.0 - smoothstep(0.0, 0.45, abs(dc - pv * 0.5))) * pv * 0.45;
+  col += ac * (1.0 - smoothstep(0.0, 0.45, abs(dc - pv * 0.5))) * pv * 0.55;
 
-  // 7) 暗角：只削光,不压桌面（预乘里 rgb 归零 = 什么都不加）
-  let vig = smoothstep(0.55, 1.15, length(uv * vec2<f32>(0.9, 1.4) - 0.45));
-  col *= 1.0 - vig * 0.55;
+  // 7) 暗角：只削光,不压桌面。压暗系数从 0.55 降到 0.38,整窗不再死黑
+  let vig = smoothstep(0.62, 1.18, length(uv * vec2<f32>(0.9, 1.4) - 0.45));
+  col *= 1.0 - vig * 0.38;
 
-  let a = 0.55 * clamp(energy + 0.2, 0.0, 1.0);
+  // 通体提亮：alpha 0.55 -> 0.72,不然透过桌面看着灰扑扑的
+  let a = 0.72 * clamp(energy + 0.25, 0.0, 1.0);
   return vec4<f32>(col * a, a);
 }

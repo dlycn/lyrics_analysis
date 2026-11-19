@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "identifier": "com.abc.lyrics",
-  "productName": "abclyrics",
-  "mainBinaryName": "abclyricsbin",
+  "identifier": "com.dlycn.abcmusic",
+  "productName": "abcmusic",
+  "mainBinaryName": "abcmusicbin",
   "build": {
     "beforeDevCommand": "",
     "beforeBuildCommand": "",
@@ -26,7 +26,7 @@
       {
         "label": "main",
         "url": "view/index.html",
-        "title": "abclyrics studio",
+        "title": "abcmusic studio",
         "width": 1280,
         "height": 960,
         "minWidth": 960,

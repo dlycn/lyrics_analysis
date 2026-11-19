@@ -24,7 +24,7 @@ fn set_overlay_passthrough(app: tauri::AppHandle, passthrough: bool) -> Result<b
 
 /// overlay 无边框窗打不开 DevTools,把前端 console 转成文件日志。
 /// 落盘在 app_log_dir(依标识符):Windows 为
-///   %APPDATA%\com.abc.lyrics\logs\overlay.log
+///   %APPDATA%\com.dlycn.abcmusic\logs\overlay.log
 #[tauri::command]
 fn append_log(app: tauri::AppHandle, level: String, msg: String) -> Result<(), String> {
     use std::io::Write;
@@ -59,11 +59,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(
-            tauri_plugin_log::Builder::new()
+        .plugin(tauri_plugin_log::Builder::new()
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal) // 默认是 UTC,日志要读本地时间
-                .build()
-        )
+                .build())
         .invoke_handler(tauri::generate_handler![
             open_url,
             set_overlay_passthrough,

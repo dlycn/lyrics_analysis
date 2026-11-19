@@ -1,6 +1,6 @@
 # 开发笔记：外链 · 资源映射 · CSP · 构建启动
 
-> 项目：abclyrics（Tauri 2，brownfield 无打包器，纯 HTML/JS）
+> 项目：abcmusic（Tauri 2，brownfield 无打包器，纯 HTML/JS）
 > 记录本次排掉的关键坑与结论，方便回看。
 
 ---
@@ -131,14 +131,14 @@ cargo tauri build>test\build.log 2>&1
 echo build args end
 rem 切到资源目录再启动，避免 CWD 错误导致 asset 访不到
 pushd "..\..\target\release"
-start "abclyrics" "abclyricsbin.exe"
+start "abcmusic" "abcmusicbin.exe"
 popd
 echo running now
 ```
 
 **要点**
 - `pushd ..\..\target\release`：把 exe 的当前目录切到 `target/release`（资源所在）。
-- `start "abclyrics" …`：独立进程启动，不挂在构建控制台上，构建窗口可随手关。
+- `start "abcmusic" …`：独立进程启动，不挂在构建控制台上，构建窗口可随手关。
 - **不要**只 `copy` 一个光杆 exe 到项目根去跑——资源不在旁边，asset 协议必挂。要么直接在 `target/release` 跑，要么 copy 时必须连资源目录一起带走。
 
 ---

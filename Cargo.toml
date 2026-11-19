@@ -1,6 +1,6 @@
 [package]
-name = "abclyrics"
-default-run = "abclyricsbin"
+name = "abcmusic"
+default-run = "abcmusicbin"
 
 
 [package.version]
@@ -24,7 +24,7 @@ crate-type = [ "staticlib", "cdylib", "rlib" ]
 
 
 [[bin]]
-name = "abclyricsbin"
+name = "abcmusicbin"
 path = "src/main.rs"
 
 [dependencies]

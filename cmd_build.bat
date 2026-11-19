@@ -8,6 +8,6 @@ echo %time% build args end
 rem 切到 release 目录(资源 lyrics/soundfonts 所在处),再从独立进程启动 exe,
 rem 避免 cmd 控制台占用 / CWD 错误导致 asset.localhost 访不到本地资源。
 pushd "..\..\target\release"
-start "abclyrics" "abclyricsbin.exe"
+start "abcmusic" "abcmusicbin.exe"
 popd
 echo %time% running now
