@@ -218,7 +218,7 @@ function fallback2D(c) {
   c.height = Math.floor(innerHeight * dpr);
   const w = c.width, h = c.height;
   if (!ctx) return;
-  ctx.fillStyle = 'rgba(10, 14, 26, 0.55)';
+  ctx.fillStyle = 'rgba(222, 29, 29, 0.24)';
   ctx.fillRect(0, 0, w, h);
   const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, h / 2);
   g.addColorStop(0, 'rgba(124,58,237,0.30)');

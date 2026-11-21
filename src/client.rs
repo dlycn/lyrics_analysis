@@ -1,7 +1,9 @@
 use std::sync::RwLock;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_log::log;
 use tauri::State;
+
+use crate::VIEW_WIN;
 /// 无字段枚举变体，serde 默认以 JSON 字符串表示（Offline/Online/Exception），
 /// 前端 invoke 时直接传字符串即可，无需数字标号。
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
@@ -24,14 +26,12 @@ impl ChatState {
 
 pub struct ChatCore{
     state: RwLock<ChatState>,
-    logger: String,
     app: AppHandle,
 }
 impl ChatCore{ 
     pub fn mount(app: AppHandle) -> Self{
         Self{
             state: RwLock::new(ChatState::Offline),
-            logger: String::new(),
             app,
         }
     }
@@ -41,7 +41,7 @@ impl ChatCore{
         *self.state.write().unwrap() = state;
         let text = self.state.read().unwrap().status_text();
         if let Err(e) = self.app.emit("chat_status", text) {
-            log::error!("事件推送失败: {e}");
+            log::error!("chat_status事件推送失败: {e}");
         }
     }
 }
@@ -53,3 +53,5 @@ impl ChatCore{
 pub fn set_state(core: State<ChatCore>, state: ChatState) {
     core.set_state(state);
 }
+
+

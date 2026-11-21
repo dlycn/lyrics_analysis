@@ -1,4 +1,4 @@
-import { GL_EVENT } from './gl.modify.js';
+import { GL_COMMAND, GL_EVENT } from './gl.modify.js';
 import { fx, STAT_NUM } from './overlay.pipeline.js';
 
 const card = document.getElementById('ov-hud');
@@ -44,3 +44,4 @@ window.__ov = {
   setStatus: (code) => { if (TEXT[code]) setState(code); },
   say: (text) => { label.textContent = text; },
 };
+

@@ -24,7 +24,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "label": "main",
+        "label": "mainwin",
         "url": "view/index.html",
         "title": "abcmusic studio",
         "width": 1280,

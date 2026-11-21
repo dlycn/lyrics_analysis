@@ -1,8 +1,14 @@
-use tauri::{Manager};
+use tauri::{Emitter, EventTarget, Manager};
+use tauri_plugin_log::{Target, TargetKind, log};
 use tauri_plugin_opener::OpenerExt;
+mod view;
 mod client;
 mod midi_ana;
 mod network;
+
+const VIEW_ROOT:&'static str = "mainwin";
+const VIEW_WIN:&'static str = "overlay";
+
 /// 用系统默认浏览器打开外部 URL(跨平台:桌面/安卓/iOS 通用)
 #[tauri::command]
 fn open_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
@@ -11,33 +17,31 @@ fn open_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
     .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn dev_tool(app: tauri::AppHandle) {
+    if let Some(overlay) = app.get_webview_window(VIEW_WIN){
+        let state = overlay.is_devtools_open();
+        if state {overlay.close_devtools();} else {
+            overlay.open_devtools();}
+        if let Err(e) = app.emit_to(EventTarget::App,"devtool_status", !state) {
+            log::error!("devtool_status事件推送失败: {e}");
+        }
+
+    }
+    
+}
+
 /// 开/关 overlay 悬浮屏的"点击穿透"，返回切换后是否处于穿透状态。
 /// 穿透开着的时候鼠标点不到它(透明无边框置顶窗)，要操作它得先关掉穿透。
 #[tauri::command]
 fn set_overlay_passthrough(app: tauri::AppHandle, passthrough: bool) -> Result<bool, String> {
     let overlay = app
-        .get_webview_window("overlay")
-        .ok_or("overlay window not found")?;
+        .get_webview_window(VIEW_WIN)
+        .ok_or(format!("{} window is not found", VIEW_WIN))?;
     overlay.set_ignore_cursor_events(passthrough).map_err(|e| e.to_string())?;
     Ok(passthrough)
 }
 
-/// overlay 无边框窗打不开 DevTools,把前端 console 转成文件日志。
-/// 落盘在 app_log_dir(依标识符):Windows 为
-///   %APPDATA%\com.dlycn.abcmusic\logs\overlay.log
-#[tauri::command]
-fn append_log(app: tauri::AppHandle, level: String, msg: String) -> Result<(), String> {
-    use std::io::Write;
-    let dir = app.path().app_log_dir().map_err(|e| e.to_string())?;
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let mut f = std::fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(dir.join("overlay.log"))
-        .map_err(|e| e.to_string())?;
-    writeln!(f, "[{}] {}", level.to_uppercase(), msg).map_err(|e| e.to_string())?;
-    Ok(())
-}
 
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -47,10 +51,10 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             let _ = cwd;
             tauri_plugin_log::log::info!("收到第二实例启动,argv={:?}", argv);
-            if let Some(main) = app.get_webview_window("main") {
+            if let Some(main) = app.get_webview_window(VIEW_ROOT) {
                 let _ = main.show();
                 let _ = main.set_focus();
-            } else if let Some(overlay) = app.get_webview_window("overlay") {
+            } else if let Some(overlay) = app.get_webview_window(VIEW_WIN) {
                 let _ = overlay.set_always_on_top(true);
                 let _ = overlay.show();
                 let _ = overlay.set_focus();
@@ -61,11 +65,12 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_log::Builder::new()
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal) // 默认是 UTC,日志要读本地时间
+                .level(log::LevelFilter::Debug)
                 .build())
         .invoke_handler(tauri::generate_handler![
             open_url,
+            dev_tool,
             set_overlay_passthrough,
-            append_log,
             client::set_state
         ]);
 
@@ -73,12 +78,19 @@ pub fn run() {
         let apphandle = app.handle().clone();
         let chat_core = client::ChatCore::mount(apphandle);
         app.manage(chat_core);
+
+        if let Ok(dir) = app.path().app_log_dir(){
+            println!("日志目录: {:?}", dir);
+        }
+
+
         // 启动悬浮屏:无边框、置顶、固定位置,默认点击穿透
+
         if let Some(overlay) = app.get_webview_window("overlay") {
             let _ = overlay.set_ignore_cursor_events(true);
+            let _ = overlay.set_always_on_top(true);
             let _ = overlay.show();
         }
         Ok(())
-    }
-    ).run(tauri::generate_context!()).expect("运行失败");
+    }).run(tauri::generate_context!()).expect("运行失败");
 }

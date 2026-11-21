@@ -50,7 +50,7 @@ fn fs_main(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
   let ac = accent();
 
   // 离线也留基本亮度——之前 0.42 太收着,整个窗都暗得不像氛围窗
-  let energy = mix(0.62, 1.0, step(0.5, s));
+  let energy = mix(0.72, 1.0, step(0.5, s));
 
   let p  = uv - vec2<f32>(0.5);
   let dv = p * vec2<f32>(ar, 1.0);
@@ -83,13 +83,15 @@ fn fs_main(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
     col += ac * (1.0 - smoothstep(0.0, 0.12, dd)) * 0.38 * fade * tw * energy;
   }
 
-  // 4) 边缘流光：加宽加亮,绕一圈扫壁的光弧
+  // 4) 边缘流光：两条对流环带,一顺一逆相向而行,相遇时对流感最足
   let b    = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-  let edge = 1.0 - smoothstep(0.0, 0.045, b);                // 流光带加宽近一倍
-  let ang  = fract(atan2(p.y, p.x) * 0.15915494 + 0.75 - t * 0.12);
-  let sweep = 1.0 - smoothstep(0.0, 0.28, min(ang, 1.0 - ang));
-  // 主光弧 + 一段淡淡的底光,让流光整圈有存在感
-  col += ac * edge * sweep * 0.90 * energy;
+  let edge = 1.0 - smoothstep(0.0, 0.032, b);                // 条带减薄,更利落
+  let a1 = fract(atan2(p.y, p.x) * 0.15915494 + 0.75 - t * 0.14);   // 逆时针带
+  let a2 = fract(atan2(p.y, p.x) * 0.15915494 + 0.25 + t * 0.18);   // 顺时针带,稍快
+  let sweep1 = 1.0 - smoothstep(0.0, 0.18, min(a1, 1.0 - a1));
+  let sweep2 = 1.0 - smoothstep(0.0, 0.18, min(a2, 1.0 - a2));
+  // 两带亮度错开(主副),边缘附一段淡底光整圈托底
+  col += ac * edge * (sweep1 * 0.62 + sweep2 * 0.46) * energy;
   col += ac * edge * 0.10 * energy;
 
   // 5) 底部水光：更亮更蓝,呼应蓝光主题
@@ -104,7 +106,12 @@ fn fs_main(@builtin(position) frag: vec4<f32>) -> @location(0) vec4<f32> {
   let vig = smoothstep(0.62, 1.18, length(uv * vec2<f32>(0.9, 1.4) - 0.45));
   col *= 1.0 - vig * 0.38;
 
-  // 通体提亮：alpha 0.55 -> 0.72,不然透过桌面看着灰扑扑的
-  let a = 0.72 * clamp(energy + 0.25, 0.0, 1.0);
+  // 亮度驱动的 alpha：亮的地方才画,暗处整片 discard——
+  // 桌面只被"特效本体"遮挡,不再是一层 0.72 的全屏滤镜。
+  // 增益 1.8 ≈ 让光核/光弧回到类似之前的通透度；上限 0.85 保持玻璃感,别挡死桌面。
+  let lum = max(max(col.r, col.g), col.b);
+  let a = clamp(lum * 1.8, 0.0, 0.85);
+  if (a < 0.02) { discard; }
   return vec4<f32>(col * a, a);
+
 }
